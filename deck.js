@@ -114,46 +114,48 @@
   });
 
   // ---------- language toggle (Google Translate page translation) ----------
-  // Spanish mode works by setting the googtrans cookie and reloading; the
-  // hidden Translate widget then translates the whole page on init.
+  // The hidden Translate widget loads on every page view. Toggling drives the
+  // widget's internal <select> directly, so the swap is instant with no
+  // reload. The googtrans cookie only persists the choice across loads, and a
+  // verified reload remains as the fallback if the widget is slow or blocked.
   const langPill = document.getElementById("langPill");
   const langBtn = document.getElementById("langBtn");
   const langMenu = document.getElementById("langMenu");
   const langLabel = document.getElementById("langLabel");
+  let verifyTimer = null;
 
   function currentLang() {
     const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
     return m && decodeURIComponent(m[1]).endsWith("/es") ? "es" : "en";
   }
 
-  function clearGtCookie() {
+  function isTranslated() {
+    return document.documentElement.classList.contains("translated-ltr") ||
+           document.documentElement.classList.contains("translated-rtl");
+  }
+
+  function writeCookie(lang) {
+    // clear every variant first so a stale copy can't shadow the new value
     const past = ";expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
     document.cookie = "googtrans=" + past;
     if (location.hostname) {
       document.cookie = "googtrans=" + past + ";domain=" + location.hostname;
       document.cookie = "googtrans=" + past + ";domain=." + location.hostname;
     }
+    if (lang === "es") document.cookie = "googtrans=/en/es;path=/";
   }
 
-  function setLanguage(lang) {
-    if (lang === currentLang()) {
-      langPill.classList.remove("open");
-      return;
-    }
-    clearGtCookie();
-    if (lang === "es") {
-      document.cookie = "googtrans=/en/es;path=/";
-      if (location.hostname) {
-        document.cookie = "googtrans=/en/es;path=/;domain=" + location.hostname;
-      }
-    }
-    location.reload();
+  function updatePill(lang) {
+    langLabel.textContent = lang === "es" ? "🇪🇸 Español" : "🇺🇸 English";
+    langMenu.querySelectorAll("button").forEach((b) => {
+      b.setAttribute("aria-selected", String(b.dataset.lang === lang));
+    });
   }
 
   function loadGoogleTranslate() {
     window.googleTranslateElementInit = function () {
       new window.google.translate.TranslateElement(
-        { pageLanguage: "en", includedLanguages: "es", autoDisplay: false },
+        { pageLanguage: "en", includedLanguages: "en,es", autoDisplay: false },
         "google_translate_element"
       );
     };
@@ -162,13 +164,47 @@
     document.head.appendChild(s);
   }
 
+  function applyViaCombo(lang) {
+    const combo = document.querySelector(".goog-te-combo");
+    if (!combo || !window.google || !window.google.translate) return false;
+    combo.value = lang === "es" ? "es" : "en";
+    combo.dispatchEvent(new Event("change"));
+    // the widget occasionally swallows the first change event
+    setTimeout(() => combo.dispatchEvent(new Event("change")), 200);
+    return true;
+  }
+
+  function setLanguage(lang) {
+    langPill.classList.remove("open");
+    langBtn.setAttribute("aria-expanded", "false");
+    clearTimeout(verifyTimer);
+
+    const alreadyThere = (lang === "es") === isTranslated();
+    if (lang === currentLang() && alreadyThere) {
+      updatePill(lang);
+      return;
+    }
+
+    writeCookie(lang);
+    updatePill(lang);
+
+    if (!applyViaCombo(lang)) {
+      location.reload();
+      return;
+    }
+    // verify the in-place swap landed; if not, the cookie is already set so a
+    // reload is guaranteed to finish the job
+    verifyTimer = setTimeout(() => {
+      if ((lang === "es") !== isTranslated()) location.reload();
+    }, 1500);
+  }
+
   const lang = currentLang();
-  langLabel.textContent = lang === "es" ? "🇪🇸 Español" : "🇺🇸 English";
+  updatePill(lang);
   langMenu.querySelectorAll("button").forEach((b) => {
-    b.setAttribute("aria-selected", String(b.dataset.lang === lang));
     b.addEventListener("click", () => setLanguage(b.dataset.lang));
   });
-  if (lang === "es") loadGoogleTranslate();
+  loadGoogleTranslate();
 
   langBtn.addEventListener("click", (e) => {
     e.stopPropagation();
