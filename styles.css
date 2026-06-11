@@ -368,7 +368,7 @@ h3 { font-size: clamp(18px, 2.2vw, 24px); font-weight: 700; letter-spacing: -0.0
 /* ---------- operators ---------- */
 .operators {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: clamp(20px, 3vw, 40px);
 }
 .operator .img-slot { margin-bottom: 16px; aspect-ratio: 8 / 9; } /* 2x the height of the old 16:9 frame */
