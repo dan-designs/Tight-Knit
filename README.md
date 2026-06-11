@@ -1,6 +1,6 @@
 # Tight Knit × Pandora · Residency Proposal Deck
 
-A 13-slide web presentation adapted from the original PDF proposal. Pure static
+A 14-slide web presentation adapted from the original PDF proposal. Pure static
 HTML/CSS/JS. No build step, no dependencies.
 
 ## Language toggle
@@ -37,11 +37,6 @@ it will fill the frame automatically:
   <img src="images/dan-booth.jpg" alt="Dan in the booth" />
 </div>
 ```
-
-## Editing contact info
-
-The bracketed placeholders (`[ EMAIL ]`, `[ PHONE ]`, `[ IG / YOUTUBE / INFOLINES.IO ]`)
-live on the final slide in `index.html`. Search for `TK·12`.
 
 ## Deploy (Vercel)
 
