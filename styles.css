@@ -89,6 +89,15 @@ html, body {
 
 .nav-center { display: flex; align-items: center; gap: 14px; }
 
+/* persistent link back to the event landing page */
+.chrome-home {
+  color: #e3ddd2;
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.chrome-home:hover { color: var(--accent); }
+
 /* ---------- language pill ---------- */
 .lang-pill { position: relative; }
 
@@ -153,6 +162,13 @@ html.translated-ltr span.notranslate:first-child { margin-left: 0; }
 .nav-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .nav-btn:active { transform: translateY(1px); }
 .nav-btn[disabled] { opacity: 0.25; pointer-events: none; }
+
+/* visible keyboard focus (WCAG 2.4.7) */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 
 .counter { font-variant-numeric: tabular-nums; color: var(--ink); min-width: 7ch; text-align: center; white-space: nowrap; }
 .slide-code { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 32vw; }

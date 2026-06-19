@@ -1,9 +1,21 @@
-# Tight Knit × Pandora · Residency Proposal Deck
+# Tight Knit & Friends // 001 · Event site
 
-A 14-slide web presentation adapted from the original PDF proposal. Pure static
-HTML/CSS/JS. No build step, no dependencies.
+A small static site for the Tight Knit & Friends 001 event at Pandora, Richmond
+VA. Pure static HTML/CSS/JS — no build step, no dependencies.
 
-## Language toggle
+## Pages
+
+- **`index.html`** — the event landing page. Hero with the lineup lockup over an
+  animated cyber-grid + dual-spotlight canvas (ported from the flyer), the two-room
+  bill, date/venue/doors, a teaser into the proposal, and a shared header/footer.
+  Primary CTAs link to tickets on Shotgun:
+  <https://shotgun.live/en/events/tight-knit-friends-001>
+  Styles: `home.css` · Script: `home.js`.
+- **`proposal.html`** — the 14-slide residency proposal deck (formerly the home
+  page), adapted from the original PDF. Linked from the nav; the top-left brand
+  links back to the event page. Styles: `styles.css` · Script: `deck.js`.
+
+## Language toggle (proposal deck)
 
 The pill in the top-right switches the whole deck between English and Spanish
 using Google Translate page translation (it sets the `googtrans` cookie and
