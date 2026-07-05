@@ -227,16 +227,18 @@ main { position: relative; z-index: 1; }
 .rooms { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 4vw, 56px); }
 .room { position: relative; }
 .room-tag {
-  display: flex; align-items: baseline; gap: 14px;
+  display: flex; align-items: center; gap: clamp(12px, 1.6vw, 18px);
   margin-bottom: 18px;
   padding-bottom: 14px;
   border-bottom: 2px solid;
   border-image: linear-gradient(90deg, var(--accent), var(--warm)) 1;
 }
 .room-tag .num {
-  font-weight: 900; font-size: clamp(28px, 4vw, 44px); line-height: 1;
+  flex-shrink: 0;
+  font-weight: 900; font-size: clamp(30px, 4.4vw, 48px); line-height: 0.9;
   color: var(--warm);
 }
+.room-head { display: flex; flex-direction: column; gap: 6px; }
 .room-tag .label {
   font-family: var(--mono);
   font-size: clamp(12px, 1.4vw, 15px);
@@ -244,10 +246,16 @@ main { position: relative; z-index: 1; }
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--head);
+  line-height: 1;
 }
-.room-tag .label small {
-  display: block; color: var(--muted); font-weight: 400; letter-spacing: 0.16em;
-  font-size: 0.78em; margin-top: 4px;
+.room-tag .sub {
+  font-family: var(--mono);
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1;
 }
 .lineup { list-style: none; }
 .lineup li {
