@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Follow the Thread · Past Events · Tight Knit</title>
+<meta name="description" content="The Tight Knit archive · every night, kept as it appeared. Follow the thread of the brand from event to event." />
+<meta name="theme-color" content="#06070d" />
+<link rel="icon" href="images/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="home.css" />
+</head>
+<body>
+
+<div class="crt-overlay" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<canvas id="bgCanvas" aria-hidden="true" style="position:fixed;opacity:0.5"></canvas>
+
+<header class="site-header">
+  <a class="brand" href="index.html"><img class="brand-logo" src="images/tk-logo.svg" alt="" aria-hidden="true" /> Tight&nbsp;Knit</a>
+  <nav class="site-nav" id="siteNav" aria-label="Primary">
+    <a class="nav-link" href="index.html">Next Event</a>
+    <a class="nav-link" href="past-events.html" aria-current="page">Past Events</a>
+    <a class="nav-link" href="proposal.html">Proposal</a>
+  </nav>
+  <div class="nav-actions">
+    <a class="btn btn-primary btn-sm" href="https://shotgun.live/en/events/tkp-the-tangle-001" target="_blank" rel="noopener">Tickets <span class="arrow" aria-hidden="true">→</span></a>
+    <button class="nav-toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><span class="nav-toggle-bars" aria-hidden="true"></span></button>
+  </div>
+</header>
+
+<main>
+
+  <section class="timeline-hero">
+    <div class="wrap">
+      <p class="eyebrow reveal">The Archive</p>
+      <h1 class="reveal" data-delay="80">Follow<br />the Thread</h1>
+      <p class="reveal" data-delay="160">Every Tight Knit night, kept exactly as it appeared when the doors were open. One continuous thread. Pull it and watch the brand unspool, edition by edition.</p>
+    </div>
+  </section>
+
+  <div class="thread" id="thread">
+    <svg class="thread-line" preserveAspectRatio="none" aria-hidden="true"><path class="thread-draw" d="" /></svg>
+
+    <!-- FUTURE — top of the thread, newest first -->
+    <div class="node future">
+      <span class="knot-dot" aria-hidden="true"></span>
+      <div class="card reveal">
+        <div class="when"><span>Coming Soon</span></div>
+        <h3>The Thread Continues…</h3>
+        <div class="meta">The next knot is being tied. Follow along.</div>
+      </div>
+    </div>
+
+    <!-- NEXT / current, live event -->
+    <div class="node right" style="--ev:#c9d6ff">
+      <span class="knot-dot" aria-hidden="true"></span>
+      <a class="card reveal" href="index.html">
+        <div class="when"><span>Sat · Aug 8 · 2026</span> <span class="status">Next · On Sale</span></div>
+        <h3>The Tangle // 001</h3>
+        <div class="meta">Pandora · Backroom + Café &amp; Lounge · Richmond VA</div>
+        <div class="roster">Riza · Makz · David Goza · Tommy 2600 · Haley Phillips</div>
+        <span class="enter">Enter Event <span class="arrow" aria-hidden="true">→</span></span>
+      </a>
+    </div>
+
+    <!-- PAST -->
+    <div class="node" style="--ev:#e8402c">
+      <span class="knot-dot" aria-hidden="true"></span>
+      <a class="card reveal" href="events/tkf-001.html">
+        <div class="when"><span>Fri · Jul 17 · 2026</span> <span class="status">Concluded</span></div>
+        <h3>Tight Knit &amp; Friends // 001</h3>
+        <div class="meta">Pandora · Backroom + Café &amp; Lounge · Richmond VA</div>
+        <div class="roster">Dan Knots · David Goza · Crimeq · Michael Quest · Burl Faircloth · Aimée Lauren · Craunic</div>
+        <span class="enter">Enter Archive <span class="arrow" aria-hidden="true">→</span></span>
+      </a>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <img class="footer-logo" src="images/tk-logo.svg" alt="Tight Knit" />
+      <div class="footer-marquee">
+        <span>RVA</span><span class="sep">//</span>
+        <span>Independent</span><span class="sep">//</span>
+        <span>Curated</span><span class="sep">//</span>
+        <span>End Transmission</span>
+      </div>
+    </div>
+    <div class="footer-grid">
+      <div class="footer-links">
+        <a href="https://shotgun.live/en/events/tkp-the-tangle-001" target="_blank" rel="noopener">Tickets</a>
+        <a href="index.html">Next Event</a>
+        <a href="proposal.html">Proposal</a>
+        <a href="https://www.tightknit.io" target="_blank" rel="noopener">tightknit.io</a>
+      </div>
+      <span class="end-transmission"><span>&copy; <span id="year">2026</span> Tight Knit · Richmond VA</span></span>
+    </div>
+  </div>
+</footer>
+
+<script src="home.js"></script>
+</body>
+</html>

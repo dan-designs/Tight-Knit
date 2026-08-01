@@ -91,12 +91,26 @@ html, body {
 
 /* persistent link back to the event landing page */
 .chrome-home {
+  display: inline-flex; align-items: center; gap: 8px;
   color: #e3ddd2;
   text-decoration: none;
   transition: color 0.2s;
   white-space: nowrap;
 }
 .chrome-home:hover { color: var(--accent); }
+.chrome-logo { width: 18px; height: 18px; display: block; filter: drop-shadow(0 0 5px rgba(255, 43, 31, 0.5)); }
+
+/* header tickets link → always the current on-sale event */
+.chrome-tickets {
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 6px 12px;
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s;
+}
+.chrome-tickets:hover { border-color: var(--accent); background: var(--accent-dim); }
 
 /* ---------- language pill ---------- */
 .lang-pill { position: relative; }
@@ -592,7 +606,8 @@ h3 { font-size: clamp(18px, 2.2vw, 24px); font-weight: 700; letter-spacing: -0.0
 /* ---------- nav label hiding on small screens ---------- */
 @media (max-width: 720px) {
   .nav-label { display: none; }
-  .chrome-id { display: none; } /* brand lives in the slides; free the bar for REC + language */
+  .chrome-home-text { display: none; } /* keep the logo as a home link, drop its label */
+  .chrome-live { display: none; }      /* free the bar for logo + tickets + language */
   .lang-btn { padding: 5px 12px; font-size: 10px; }
   .slide-code { max-width: 34vw; font-size: 9px; }
   .counter { min-width: 0; font-size: 10px; }
