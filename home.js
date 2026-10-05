@@ -34,7 +34,7 @@
   const canvas = document.getElementById("bgCanvas");
   if (canvas) {
     const ctx = canvas.getContext("2d");
-    const bgMode = canvas.dataset.anim === "globe" ? "globe" : "grid";
+    const bgMode = ({ globe: "globe", fieldday: "fieldday" })[canvas.dataset.anim] || "grid";
     let W = 0, H = 0, dpr = 1, start = performance.now(), raf = null;
 
     function resize() {
@@ -45,6 +45,7 @@
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (bgMode === "fieldday") buildField();
     }
 
     const tiers = [
@@ -194,10 +195,136 @@
       ctx.restore();
     }
 
+    /* ============================================================
+       Field Day — day→night field scene (palette engine ported from
+       the flyer; scene re-laid-out for a responsive landscape hero)
+       ============================================================ */
+    const TAU2 = Math.PI * 2, FDUR = 60;
+    const fclamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
+    const flerp = (a, b, k) => a + (b - a) * k;
+    const fsmooth = (x) => { x = fclamp(x); return x * x * (3 - 2 * x); };
+    const ftoLin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const ftoSrgb = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+    const fhex = (h) => { h = h.replace("#", ""); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); };
+    const frgb2lab = ([r, g, b]) => { r = ftoLin(r); g = ftoLin(g); b = ftoLin(b); const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b), m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b), s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b); return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s]; };
+    const flab2rgb = ([L, a, b]) => { const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3; return [ftoSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s), ftoSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s), ftoSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)].map((v) => fclamp(v)); };
+    const flum = (c) => 0.2126 * ftoLin(c[0]) + 0.7152 * ftoLin(c[1]) + 0.0722 * ftoLin(c[2]);
+    const fmix = (a, b, k) => [flerp(a[0], b[0], k), flerp(a[1], b[1], k), flerp(a[2], b[2], k)];
+    const fcss = (c, a = 1) => `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${fclamp(a).toFixed(4)})`;
+    const fmul = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const FCFG = {
+      sun: { path: [[0, 75], [14, 57], [20, 32], [24, 12], [27.5, -4], [30, -22], [38, -90], [46, -158], [49.5, -180], [54, -222], [60, -285]] },
+      scalars: { night: [[0, 0], [24, 0], [28, .3], [31.5, 1], [45.5, 1], [48, .4], [50, 0]], stars: [[0, 0], [24.5, 0], [27.5, .35], [31, 1], [45, 1], [48, .35], [50.5, 0]] },
+      fixed: { green: "#3CF06E", uv: "#9B5CFF", bulb: "#FFD89A", star: "#E8F2EA" },
+      palette: [
+        { t: 0, sky: ["#F6E7CF", "#F8E2C0", "#FADDB0", "#FBD9A6"], sun: "#FF9F43", glow: "#FFD08A", glowA: .55, far: "#6E7F3E", mid: "#5A6A33", near: "#4E5E2C", tree: "#3E4C22" },
+        { t: 12, sky: ["#F6E2C4", "#F9DDB4", "#FCD39E", "#FCCB8E"], sun: "#FF9A3C", glow: "#FFC880", glowA: .58, far: "#6C7B3C", mid: "#586631", near: "#4B592A", tree: "#3C4821" },
+        { t: 17, sky: ["#F2C58E", "#F9B774", "#FF9F58", "#FF8A45"], sun: "#FF7A2E", glow: "#FFB060", glowA: .7, far: "#6A6A36", mid: "#574F2E", near: "#463C28", tree: "#34281E" },
+        { t: 21, sky: ["#6B3FA0", "#A8407E", "#E8436B", "#FF7A3D"], sun: "#FF6A2E", glow: "#FF8A50", glowA: .8, far: "#5A2F42", mid: "#3E2438", near: "#2A1A2E", tree: "#231426" },
+        { t: 24.5, sky: ["#3A2470", "#6B3FA0", "#C2436E", "#F2703E"], sun: "#F2562A", glow: "#FF7A48", glowA: .6, far: "#3A2032", mid: "#2A1726", near: "#1C1020", tree: "#140A16" },
+        { t: 28, sky: ["#0E0C24", "#231A48", "#4A2A62", "#8A3E62"], sun: "#E2502A", glow: "#C04A5A", glowA: .25, far: "#120C18", mid: "#0C0810", near: "#08060B", tree: "#07050A" },
+        { t: 31.5, sky: ["#06070D", "#080A14", "#0A0D1B", "#0B0F1F"], sun: "#E2502A", glow: "#9B5CFF", glowA: 0, far: "#050608", mid: "#040506", near: "#030405", tree: "#020303" },
+        { t: 45, sky: ["#06070D", "#080A14", "#0A0D1B", "#0B0F1F"], sun: "#E2502A", glow: "#9B5CFF", glowA: 0, far: "#050608", mid: "#040506", near: "#030405", tree: "#020303" },
+        { t: 48, sky: ["#0E0F2A", "#1C1A40", "#2A2350", "#5A3368"], sun: "#FF7A48", glow: "#C0507A", glowA: .2, far: "#0E0A16", mid: "#0A0810", near: "#07060B", tree: "#06040A" },
+        { t: 51, sky: ["#2A2350", "#7A4A78", "#F29E7E", "#FFD9A0"], sun: "#FF8C4A", glow: "#FFC08A", glowA: .75, far: "#4A3848", mid: "#3A2A3C", near: "#2A1E30", tree: "#22182A" },
+        { t: 54.5, sky: ["#F4DCC4", "#F7D8B4", "#FAD4A4", "#FCCB92"], sun: "#FF9A48", glow: "#FFCF90", glowA: .6, far: "#6A7440", mid: "#56602F", near: "#4A552A", tree: "#3A4424" }
+      ]
+    };
+    const FFIX = {}; for (const k in FCFG.fixed) FFIX[k] = fhex(FCFG.fixed[k]);
+    const FPAL = FCFG.palette.map((k) => { const o = { t: k.t }; for (const f in k) { if (f === "t") continue; const v = k[f]; if (f === "sky") o.sky = v.map((h) => frgb2lab(fhex(h))); else o[f] = typeof v === "string" ? frgb2lab(fhex(v)) : v; } return o; });
+    function fmono(keys, getT, getV, t) {
+      const n = keys.length, D = FDUR, tt = (j) => getT(keys[((j % n) + n) % n]) + Math.floor(j / n) * D, vv = (j) => getV(keys[((j % n) + n) % n]);
+      let i = 0; const tw = t < getT(keys[0]) ? t + D : t; for (let j = 0; j < n; j++) if (tw >= tt(j)) i = j;
+      const t0 = tt(i), t1 = tt(i + 1), h = t1 - t0, u = (tw - t0) / h;
+      const v0 = vv(i), v1 = vv(i + 1), vm = vv(i - 1), vp = vv(i + 2), dm = t0 - tt(i - 1), dp = tt(i + 2) - t1;
+      const tan = (a, b, c, ha, hb) => { const d0 = (b - a) / ha, d1 = (c - b) / hb; return d0 * d1 <= 0 ? 0 : (2 * d0 * d1) / (d0 + d1); };
+      const u2 = u * u, u3 = u2 * u, h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
+      const f = (a, b, c, d) => h00 * b + h10 * h * tan(a, b, c, dm, h) + h01 * c + h11 * h * tan(b, c, d, h, dp);
+      return Array.isArray(v0) ? v0.map((_, q) => f(vm[q], v0[q], v1[q], vp[q])) : f(vm, v0, v1, vp);
+    }
+    function fpalette(t) { const A = FPAL[0], o = {}; for (const f in A) { if (f === "t") continue; if (f === "sky") o.sky = A.sky.map((_, n) => flab2rgb(fmono(FPAL, (x) => x.t, (x) => x.sky[n], t))); else if (Array.isArray(A[f])) o[f] = flab2rgb(fmono(FPAL, (x) => x.t, (x) => x[f], t)); else o[f] = fmono(FPAL, (x) => x.t, (x) => x[f], t); } return o; }
+    const fscalar = (keys, t) => fmono(keys, (x) => x[0], (x) => x[1], t);
+    function fsunAngle(t) {
+      const P = FCFG.sun.path, n = P.length, D = FDUR;
+      const pt = (i) => (i < 0 ? [P[n - 1 + i][0] - D, P[n - 1 + i][1] + 360] : i >= n ? [P[i - n + 1][0] + D, P[i - n + 1][1] - 360] : P[i]);
+      let i = 0; while (i < n - 2 && t >= P[i + 1][0]) i++;
+      const p0 = pt(i - 1), p1 = pt(i), p2 = pt(i + 1), p3 = pt(i + 2);
+      const m1 = ((p2[1] - p1[1]) / (p2[0] - p1[0]) + (p1[1] - p0[1]) / (p1[0] - p0[0])) / 2, m2 = ((p3[1] - p2[1]) / (p3[0] - p2[0]) + (p2[1] - p1[1]) / (p2[0] - p1[0])) / 2;
+      const h = p2[0] - p1[0], u = (t - p1[0]) / h, u2 = u * u, u3 = u2 * u;
+      return (2 * u3 - 3 * u2 + 1) * p1[1] + (u3 - 2 * u2 + u) * h * m1 + (-2 * u3 + 3 * u2) * p2[1] + (u3 - u2) * h * m2;
+    }
+    let fSTARS = null, fTREES = null, fFEST = null, fSTAGE = null;
+    function buildField() {
+      const rnd = fmul(10102026), horizon = H * 0.66;
+      fSTARS = []; for (let i = 0; i < 110; i++) fSTARS.push({ x: rnd() * W, y: rnd() * H * 0.6, r: 0.7 + rnd() * 1.5, b: .5 + rnd() * .5, th: rnd() * .85, k: 3 + Math.floor(rnd() * 9), ph: rnd() * TAU2 });
+      fTREES = []; const nt = Math.max(7, Math.round(W / 150)), kinds = ["r", "c", "p"];
+      for (let i = 0; i < nt; i++) { const x = ((i + 0.5) / nt) * W + (rnd() - 0.5) * (W / nt) * 0.5; if (Math.abs(x - W * 0.52) < W * 0.09) continue; const k = kinds[Math.floor(rnd() * 3)], h = H * (0.045 + rnd() * 0.045); fTREES.push({ x, h, k, w: k === "r" ? h * .68 : k === "c" ? h * .52 : h * .32 }); }
+      fFEST = []; const y0 = H * 0.17, sag = H * 0.055, n = Math.max(10, Math.round(W / 70));
+      for (let i = 0; i <= n; i++) { const u = i / n, x = flerp(W * 0.04, W * 0.96, u), y = y0 + Math.sin(u * Math.PI) * sag; fFEST.push({ x, y, k: 2 + Math.floor(rnd() * 6), ph: rnd() * TAU2, th: rnd() * 0.45 }); }
+      // central stage: a stepped pyramid of cubes + flanking speaker stacks (glows UV at night)
+      fSTAGE = []; const sx = W * 0.52, cu = Math.max(11, H * 0.019), base = horizon + H * 0.004;
+      fSTAGE.push({ x: sx - cu * 4.5, y: base - cu, w: cu * 9, h: cu, tier: 0 });
+      let yy = base - cu;
+      [5, 4, 3].forEach((cols, ti) => { yy -= cu + 2; const tot = cols * cu + (cols - 1) * 2; for (let i = 0; i < cols; i++) fSTAGE.push({ x: sx - tot / 2 + i * (cu + 2), y: yy, w: cu, h: cu, tier: ti + 1 }); });
+      yy -= cu * 0.8 + 2; fSTAGE.push({ x: sx - cu * 3, y: yy, w: cu * 6, h: cu * 0.8, tier: 4 });
+      for (const s of [-1, 1]) { const x = sx + s * cu * 6.2; fSTAGE.push({ x: x - cu / 2, y: base - cu * 2, w: cu, h: cu, tier: 1 }); fSTAGE.push({ x: x - cu / 2, y: base - cu * 3 - 2, w: cu, h: cu, tier: 2 }); }
+    }
+    function drawField(tRaw) {
+      if (!fSTARS) buildField();
+      const t = ((tRaw % FDUR) + FDUR) % FDUR;
+      const P = fpalette(t), N = fscalar(FCFG.scalars.night, t), starsA = fscalar(FCFG.scalars.stars, t);
+      const horizon = H * 0.66;
+      const sg = ctx.createLinearGradient(0, 0, 0, horizon);
+      [0, .42, .78, 1].forEach((s, i) => sg.addColorStop(s, fcss(P.sky[i])));
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+      if (starsA > 0.001) { ctx.fillStyle = fcss(FFIX.star); for (const s of fSTARS) { const v = fclamp((starsA - s.th) / .12); if (v <= 0) continue; ctx.globalAlpha = v * s.b * (.6 + .4 * Math.sin(TAU2 * t * s.k / 60 + s.ph)); ctx.fillRect(s.x - s.r / 2, s.y - s.r / 2, s.r, s.r); } ctx.globalAlpha = 1; }
+      const a = fsunAngle(t) * Math.PI / 180, cx = W * 0.5, cy = horizon, rx = W * 0.58, ry = H * 0.6;
+      const sx = cx + rx * Math.cos(a), sy = cy - ry * Math.sin(a), el = Math.sin(a), R = Math.max(26, W * 0.045), sv = fsmooth((el + .12) / .16);
+      // moon on the opposite arc (visible through the night)
+      const mEl = -el, mv = fsmooth(mEl / .18) * fsmooth((N - .1) / .3);
+      if (mv > 0.002) { const mx = cx - rx * Math.cos(a), my = cy + ry * Math.sin(a);
+        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, R * 4); mg.addColorStop(0, fcss(FFIX.star, .16 * mv)); mg.addColorStop(1, fcss(FFIX.star, 0)); ctx.fillStyle = mg; ctx.fillRect(0, 0, W, horizon + 40);
+        ctx.fillStyle = fcss([.92, .95, .93], .92 * mv); ctx.beginPath(); ctx.arc(mx, my, R * .82, 0, TAU2); ctx.fill(); }
+      if (sv > 0 && P.glowA > 0) {
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, R * 8); g.addColorStop(0, fcss(P.glow, P.glowA * sv)); g.addColorStop(.35, fcss(P.glow, P.glowA * .35 * sv)); g.addColorStop(1, fcss(P.glow, 0)); ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizon + 60);
+        const b = ctx.createRadialGradient(sx, sy, R * .9, sx, sy, R * 2.1); b.addColorStop(0, fcss(P.sun, .4 * sv)); b.addColorStop(1, fcss(P.sun, 0)); ctx.fillStyle = b; ctx.beginPath(); ctx.arc(sx, sy, R * 2.1, 0, TAU2); ctx.fill();
+      }
+      if (sv > 0) { ctx.fillStyle = fcss(P.sun); ctx.beginPath(); ctx.arc(sx, sy, R, 0, TAU2); ctx.fill(); }
+      const ridge = (fn, col) => { ctx.fillStyle = fcss(col); ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 10) ctx.lineTo(x, fn(x)); ctx.lineTo(W, fn(W)); ctx.lineTo(W, H); ctx.closePath(); ctx.fill(); };
+      const far = (x) => horizon + Math.sin(x * .0062 + .8) * H * .010 + Math.sin(x * .0141 + 2.1) * H * .006;
+      const mid = (x) => horizon + H * .038 + Math.sin(x * .0045 + 2.6) * H * .016 + Math.sin(x * .012 + .4) * H * .006;
+      const near = (x) => horizon + H * .090 + Math.sin(x * .0036 + 4.2) * H * .020 + Math.sin(x * .0102 + 1.3) * H * .007;
+      ridge(far, P.far);
+      ctx.fillStyle = fcss(P.tree);
+      for (const tr of fTREES) { const y = far(tr.x) + 2, h = tr.h; ctx.beginPath(); if (tr.k === "r") { ctx.fillRect(tr.x - 3, y - h * .45, 6, h * .45); ctx.arc(tr.x, y - h * .64, h * .34, 0, TAU2); } else if (tr.k === "c") { ctx.moveTo(tr.x - h * .26, y); ctx.lineTo(tr.x + h * .26, y); ctx.lineTo(tr.x, y - h); } else { ctx.ellipse(tr.x, y - h * .48, h * .16, h * .5, 0, 0, TAU2); } ctx.fill(); }
+      // stage: dark structure by day, glowing UV cubes + beams at night
+      if (fSTAGE) {
+        const glow = fsmooth((N - .2) / .3), dayK = fclamp((flum(P.far) - .012) / .08);
+        const scx = W * 0.52; let topY = H; for (const b of fSTAGE) if (b.y < topY) topY = b.y;
+        if (glow > .06) {
+          ctx.save(); ctx.globalCompositeOperation = "screen";
+          for (let j = -1; j <= 1; j++) { const ang = (-90 + j * 16 + 11 * Math.sin(TAU2 * t * (3 + j) / 60 + j)) * Math.PI / 180, len = H * 0.52, col = j === 0 ? [1, 1, 1] : FFIX.uv; ctx.save(); ctx.translate(scx, topY); ctx.rotate(ang); const g = ctx.createLinearGradient(0, 0, 0, -len); g.addColorStop(0, fcss(col, .11 * glow)); g.addColorStop(.5, fcss(col, .05 * glow)); g.addColorStop(1, fcss(col, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.lineTo(26, -len); ctx.lineTo(-26, -len); ctx.closePath(); ctx.fill(); ctx.restore(); }
+          ctx.restore();
+        }
+        for (const b of fSTAGE) { ctx.fillStyle = fcss(P.tree); ctx.fillRect(b.x, b.y, b.w, b.h); }
+        if (dayK > .04 && glow < .98) { ctx.strokeStyle = fcss(P.tree, .45 * (1 - glow) * dayK); ctx.lineWidth = 1; for (const b of fSTAGE) ctx.strokeRect(b.x + .5, b.y + .5, b.w - 1, b.h - 1); }
+        if (glow > .01) { ctx.save(); for (const b of fSTAGE) { const p = .55 + .45 * Math.sin(TAU2 * t * (2 + b.tier) / 60 + b.tier); ctx.fillStyle = fcss(FFIX.uv, glow * .13 * p); ctx.fillRect(b.x, b.y, b.w, b.h); ctx.shadowColor = fcss(FFIX.uv, glow); ctx.shadowBlur = 12; ctx.strokeStyle = fcss(FFIX.uv, glow * (.5 + .5 * p)); ctx.lineWidth = 1.6; ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); } ctx.restore(); }
+      }
+      ridge(mid, P.mid); ridge(near, P.near);
+      // overhead festoon string, warm bulbs through the evening
+      ctx.strokeStyle = fcss(P.tree, .7); ctx.lineWidth = 1.5; ctx.beginPath();
+      fFEST.forEach((b, i) => (i ? ctx.lineTo(b.x, b.y) : ctx.moveTo(b.x, b.y))); ctx.stroke();
+      const festOn = fsmooth((N - .18) / .3);
+      for (let i = 0; i < fFEST.length; i++) { const b = fFEST[i]; ctx.fillStyle = fcss(P.tree); ctx.beginPath(); ctx.arc(b.x, b.y, 2.6, 0, TAU2); ctx.fill();
+        const v = festOn * (b.th < N ? 1 : 0) * (.82 + .18 * Math.sin(TAU2 * t * b.k / 60 + b.ph)); if (v <= 0.02) continue;
+        ctx.save(); ctx.globalCompositeOperation = "screen"; const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 15); g.addColorStop(0, fcss(FFIX.bulb, .55 * v)); g.addColorStop(1, fcss(FFIX.bulb, 0)); ctx.fillStyle = g; ctx.fillRect(b.x - 15, b.y - 15, 30, 30); ctx.restore();
+        ctx.fillStyle = fcss(fmix(P.tree, [1, .93, .78], v)); ctx.beginPath(); ctx.arc(b.x, b.y, 2.6, 0, TAU2); ctx.fill(); }
+    }
+
     function frame(now) {
       const t = (now - start) / 1000;
-      if (bgMode === "globe") drawGlobe(t); else drawGrid(t);
-      drawSpots(t);
+      if (bgMode === "fieldday") { drawField(t); }
+      else { if (bgMode === "globe") drawGlobe(t); else drawGrid(t); drawSpots(t); }
       raf = requestAnimationFrame(frame);
     }
 
@@ -207,7 +334,8 @@
       resizeTimer = setTimeout(resize, 150);
     });
     resize();
-    if (prefersReduced) { if (bgMode === "globe") drawGlobe(6); else drawGrid(2.1); drawSpots(2.1); }
+    if (bgMode === "fieldday") start = performance.now() - 17000;   // open on golden hour
+    if (prefersReduced) { if (bgMode === "fieldday") drawField(20); else { if (bgMode === "globe") drawGlobe(6); else drawGrid(2.1); drawSpots(2.1); } }
     else {
       raf = requestAnimationFrame(frame);
       document.addEventListener("visibilitychange", () => {

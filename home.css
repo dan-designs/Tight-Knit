@@ -1,14 +1,47 @@
 /* ============================================================
    TIGHT KNIT · site styles (event landing · archive · timeline)
    Palette is variable-driven. Default = the CURRENT on-sale event
-   (Sidequest // 001, vivid green). Body theme classes restore an
-   archived event's original palette:
+   (Field Day // 001, day→night green + sun orange). Body theme
+   classes restore an archived event's original palette:
+     .theme-green → Sidequest // 001 (vivid green)
      .theme-blue  → The Tangle // 001 (ice blue)
      .theme-warm  → Tight Knit & Friends // 001 (red)
+     .theme-amber → Park Raiser (amber)
    ============================================================ */
 
 :root {
-  /* --- current event palette: SIDEQUEST // 001 (vivid green) --- */
+  /* --- current event palette: FIELD DAY // 001 (UV purple + sun orange) --- */
+  --accent: #9b5cff;
+  --accent-rgb: 155, 92, 255;
+  --warm: #ff9f43;
+  --warm-rgb: 255, 159, 67;
+  --head: #ece9f5;
+  --ink: #cdc9dc;
+  --muted: #8a8598;
+  --muted-bright: #a9a4ba;
+  --txt-bright: #ddd8ec;
+  --line: #241f33;
+  --bg-raise: #100b1a;
+  --accent-dim: rgba(155, 92, 255, 0.15);
+  --knot: #ece9f5;
+  --glow: 0 0 8px rgba(155, 92, 255, 0.32), 0 0 20px rgba(155, 92, 255, 0.18);
+  --bg-grad: linear-gradient(180deg, #080710 0%, #0a0814 46%, #0f0b1e 82%, #140d26 100%);
+  --vignette-col: rgba(6, 4, 12, 0.6);
+  --veil-btm: rgba(12, 8, 24, 0.5);
+  --chrome-1: rgba(8, 6, 14, 0.79);
+  --chrome-2: rgba(8, 6, 14, 0.63);
+
+  /* --- type --- */
+  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: "Archivo", system-ui, -apple-system, sans-serif;
+  --display: "Archivo Black", "Archivo", system-ui, sans-serif;
+  --nav-h: 60px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --maxw: 1180px;
+}
+
+/* --- archived event palette: SIDEQUEST // 001 (vivid green) --- */
+.theme-green {
   --accent: #2bff62;
   --accent-rgb: 43, 255, 98;
   --warm: #2bff62;
@@ -28,14 +61,6 @@
   --veil-btm: rgba(6, 22, 14, 0.5);
   --chrome-1: rgba(5, 7, 6, 0.79);
   --chrome-2: rgba(5, 7, 6, 0.63);
-
-  /* --- type --- */
-  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --sans: "Archivo", system-ui, -apple-system, sans-serif;
-  --display: "Archivo Black", "Archivo", system-ui, sans-serif;
-  --nav-h: 60px;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --maxw: 1180px;
 }
 
 /* --- archived event palette: THE TANGLE // 001 (ice blue) --- */
@@ -281,6 +306,19 @@ main { position: relative; z-index: 1; }
   background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.42) 60%, var(--veil-btm) 100%);
   pointer-events: none;
 }
+/* day/night field scene: keep the picture legible but let it show —
+   darken behind the left-aligned lockup, reveal the sky + sun on the right */
+.hero.fieldday .hero-veil {
+  background:
+    linear-gradient(97deg, rgba(6,4,12,0.86) 0%, rgba(6,4,12,0.66) 34%, rgba(6,4,12,0.26) 66%, rgba(6,4,12,0.06) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.08) 55%, rgba(10,8,22,0.5) 100%);
+}
+@media (max-width: 640px) {
+  .hero.fieldday .hero-veil {
+    background:
+      linear-gradient(180deg, rgba(6,4,12,0.4) 0%, rgba(6,4,12,0.58) 46%, rgba(6,4,12,0.84) 100%);
+  }
+}
 /* animated Tangle knot centerpiece (Tangle event only) */
 .hero-knot {
   position: absolute; z-index: 2;
@@ -364,6 +402,9 @@ main { position: relative; z-index: 1; }
 
 /* ---------- lineup ---------- */
 .rooms { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 4vw, 56px); }
+/* single-stage bill fills the width with a two-column name grid */
+.rooms.single { grid-template-columns: 1fr; }
+.rooms.single .lineup { display: grid; grid-template-columns: 1fr 1fr; column-gap: clamp(28px, 5vw, 72px); }
 .room { position: relative; }
 .room-tag {
   display: flex; align-items: center; gap: clamp(12px, 1.6vw, 18px);
@@ -425,6 +466,13 @@ main { position: relative; z-index: 1; }
   color: var(--warm);
   margin-left: 0.5em;
 }
+.room-note {
+  margin-top: 18px;
+  font-family: var(--mono);
+  font-size: clamp(12px, 1.4vw, 14px);
+  letter-spacing: 0.04em;
+  color: var(--muted-bright);
+}
 
 /* icon-only SoundCloud / Instagram preview button */
 .sc-btn {
@@ -458,6 +506,22 @@ main { position: relative; z-index: 1; }
 
 /* ---------- details ---------- */
 .details { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 3vw, 40px); }
+.details.four { grid-template-columns: repeat(4, 1fr); }
+
+/* "In The Field" amenities: number + station heading + description */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(22px, 3vw, 40px) clamp(28px, 5vw, 72px); }
+.field-item { display: flex; gap: clamp(14px, 2vw, 22px); align-items: flex-start; padding-top: 20px; border-top: 1px solid var(--line); }
+.field-item .fnum {
+  flex-shrink: 0;
+  font-family: var(--display); font-size: clamp(26px, 3.2vw, 38px); line-height: 0.9;
+  color: var(--warm); text-shadow: var(--glow);
+}
+.field-item .fname {
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(21px, 2.6vw, 30px); line-height: 1.02; letter-spacing: -0.01em;
+  text-transform: uppercase; color: var(--head); margin-bottom: 10px;
+}
+.field-item .fdesc { font-size: clamp(13px, 1.45vw, 15px); line-height: 1.55; color: var(--muted-bright); max-width: 42ch; }
 .detail .k {
   font-family: var(--mono);
   font-size: 12px; font-weight: 700; letter-spacing: 0.24em;
@@ -612,8 +676,11 @@ a.card:hover .enter .arrow { transform: translateX(3px); }
 }
 @media (max-width: 860px) {
   .rooms { grid-template-columns: 1fr; gap: 40px; }
+  .rooms.single .lineup { grid-template-columns: 1fr; }
   .teaser { grid-template-columns: 1fr; }
   .details { grid-template-columns: 1fr; gap: 26px; }
+  .details.four { grid-template-columns: 1fr 1fr; }
+  .field-grid { grid-template-columns: 1fr; }
   /* timeline collapses to a single left rail */
   .node, .node.right { grid-template-columns: 1fr; }
   .node .card, .node.right .card { grid-column: 1; margin-left: 34px; }

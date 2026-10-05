@@ -7,30 +7,38 @@ HTML/CSS/JS — no build step, no dependencies.
 
 ## Pages
 
-- **`index.html`** — the current event landing page (**The Tangle // 001**, Aug 8
-  2026). Hero with the lineup lockup, the animated **Tangle knot** centerpiece +
-  cyber-grid/spotlight canvas, the two-room bill, details, a teaser, and a shared
-  header/footer. Buy-tickets CTAs → the current Shotgun event.
+- **`index.html`** — the current event landing page (**Field Day // 001**, Oct 10
+  2026). Hero over an animated **day→night field scene** (`data-anim="fieldday"`),
+  the single-stage bill, an "In The Field" activity grid, details, a teaser, and a
+  shared header/footer. Buy-tickets CTAs → the current Shotgun event.
   Styles: `home.css` · Script: `home.js`.
 - **`past-events.html`** — the **"Follow the Thread"** archive: a woven SVG thread
   (generated in JS through each event node) that winds between event cards. Each
   node links into that event's preserved page and carries its own accent color.
-- **`events/*.html`** — archived event snapshots (e.g. `events/tkf-001.html`,
-  Tight Knit & Friends // 001). Each keeps its **own original palette** and lineup,
-  with the body ticket CTA removed (replaced by a "Past Event" tag). The header
-  Tickets button on every page always points at the current on-sale event.
+- **`events/*.html`** — archived event snapshots (`sidequest-001`, `park-raiser`,
+  `tangle-001`, `tkf-001`). Each keeps its **own original palette + animation** and
+  lineup, with the body ticket CTA removed (replaced by a "Past Event" tag). The
+  header Tickets button on every page always points at the current on-sale event.
 - **`proposal.html`** — the 14-slide residency proposal deck, adapted from the
   original PDF. Styles: `styles.css` · Script: `deck.js`.
 
-## Theming
+## Theming + animations
 
 `home.css` is palette-driven via CSS custom properties. `:root` holds the
-**current event** palette (The Tangle = ice blue); adding `class="theme-warm"` to
-`<body>` restores the archived TKF 001 palette (red/orange). `home.js` reads the
-active palette (`--accent-rgb`, `--warm-rgb`, `--knot`) off `<body>`, so one
-script recolors the canvas + knot per page. To add a new event: create the new
-`index.html` in the current palette, move the outgoing event into `events/`, add a
-node to `past-events.html`.
+**current event** palette (Field Day = neon green + sun orange); body theme classes
+restore an archived event's palette: `theme-green` (Sidequest), `theme-blue`
+(Tangle), `theme-warm` (TKF), `theme-amber` (Park Raiser). `home.js` reads the
+active palette (`--accent-rgb`, `--warm-rgb`, `--knot`) off `<body>`.
+
+The hero background is a `<canvas id="bgCanvas">` whose `data-anim` picks the
+renderer in `home.js`: `grid` (default spotlight grid), `globe` (Sidequest's
+rotating globe), `fieldday` (Field Day's day/night field scene — a ported palette
+engine with a landscape sun/moon arc, ridges, trees, festoon and stars).
+The Tangle knot is an `#tangleSvg` element the script animates when present.
+
+To add a new event: create the new `index.html` in the current palette (pick its
+`data-anim`), move the outgoing event into `events/` (add its old palette as a
+body `theme-*` class), and add a node to `past-events.html`.
 
 ## Assets
 
